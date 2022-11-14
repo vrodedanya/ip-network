@@ -1,23 +1,13 @@
-use num_derive::FromPrimitive;    
 use num_traits::FromPrimitive;
 
 #[derive(Debug)]
-pub enum Version {
-    IpV4 = 4,
-    IpV6 = 6,
-}
-
-#[derive(FromPrimitive)]
-#[derive(Debug)]
-pub enum TransportProtocolsNumbers {
-    Tcp = 6,
-    Udp = 17,
-    Sctp = 132
+pub enum Header {
+    V4(V4),
+    V6(V6)
 }
 
 #[derive(Debug)]
-pub struct Header {
-    pub version: Version,
+pub struct V4 {
     pub header_length: u8,
     pub dscp: u8, // Differentiated Services Code Point
     pub ecn: u8, // Explicit Congestion Notification
@@ -27,17 +17,39 @@ pub struct Header {
     pub has_fragments: bool,
     pub fragment_offset: u16,
     pub ttl: u8, // Time to live
-    pub protocol: TransportProtocolsNumbers,
+    pub protocol: super::TransportProtocolsNumbers,
     pub checksum: u16,
-    pub src_ip: super::Address,
-    pub dst_ip: super::Address
+    pub src_ip: super::address::V4,
+    pub dst_ip: super::address::V4
+}
+
+#[derive(Debug)]
+pub struct V6 {
+
 }
 
 
-impl Header {
+impl V4 {
+    pub fn empty() -> V4 {
+        V4 {
+            header_length: 0,
+            dscp: 0x0,
+            ecn: 0x0,
+            packet_length: 0,
+            id: 0x0000,
+            dont_fragment: false,
+            has_fragments: false,
+            fragment_offset: 0,
+            ttl: 0,
+            protocol: super::TransportProtocolsNumbers::Tcp,
+            checksum: 0x0000,
+            src_ip: super::address::V4::from_string("0.0.0.0"),
+            dst_ip: super::address::V4::from_string("0.0.0.0")
+        }
+    }
     pub fn encode(&self) -> [u8; 20] {
         let mut bytes = [0_u8; 20];
-        bytes[0] = (self.version as u8) << 4 & 0xf0;
+        bytes[0] = 0x40;
         bytes[0] |= 5;
         bytes[1] = self.dscp << 2 & 0xf6;
         bytes[1] = self.ecn & 0x03;
@@ -52,7 +64,7 @@ impl Header {
         bytes[6] |= (offset_bytes[0] >> 3)& 0x1f;
         bytes[7] = (offset_bytes[0] << 3) | offset_bytes[1] >> 3;
         bytes[8] = self.ttl;
-        bytes[9] = (self.protocol as u8);
+        bytes[9] = self.protocol as u8;
         let checksum_bytes = self.checksum.to_be_bytes();
         bytes[10] = checksum_bytes[0];
         bytes[11] = checksum_bytes[1];
@@ -69,21 +81,26 @@ impl Header {
         return bytes;
     }
     
-    pub fn decode(&mut self, bytes: [u8; 20]) {
-        self.version = if (bytes[0] >> 4 & 0x0f) == 4 {Version::IpV4} else {Version::IpV6};
-        self.header_length = bytes[0] & 0x0f;
-        self.dscp = bytes[1] >> 2;
-        self.ecn = bytes[1] & 0x03;
-        self.packet_length = u16::from_be_bytes([bytes[2], bytes[3]]);
-        self.id = u16::from_be_bytes([bytes[4], bytes[5]]);
-        self.dont_fragment = bytes[6] & 0x40 == 0x40;
-        self.has_fragments = bytes[6] & 0x20 == 0x20;
-        let offset_bytes = self.fragment_offset.to_be_bytes();
-        self.fragment_offset = u16::from_be_bytes([bytes[6] << 3 | bytes[7] >> 3, offset_bytes[1] << 7]);
-        self.ttl = bytes[8];
-        self.protocol = FromPrimitive::from_u8(bytes[9]).unwrap();
-        self.checksum = u16::from_be_bytes([bytes[10], bytes[11]]);
-        self.src_ip = super::Address::from_bytes(bytes[12], bytes[13], bytes[14], bytes[15]);
-        self.dst_ip = super::Address::from_bytes(bytes[16], bytes[17], bytes[18], bytes[19]);
+    pub fn decode(bytes: [u8; 20]) -> Header {
+        if (bytes[0] >> 4 & 0x0f) == 4 {
+            let mut header = V4::empty();
+            header.header_length = bytes[0] & 0x0f;
+            header.dscp = bytes[1] >> 2;
+            header.ecn = bytes[1] & 0x03;
+            header.packet_length = u16::from_be_bytes([bytes[2], bytes[3]]);
+            header.id = u16::from_be_bytes([bytes[4], bytes[5]]);
+            header.dont_fragment = bytes[6] & 0x40 == 0x40;
+            header.has_fragments = bytes[6] & 0x20 == 0x20;
+            let offset_bytes = header.fragment_offset.to_be_bytes();
+            header.fragment_offset = u16::from_be_bytes([bytes[6] << 3 | bytes[7] >> 3, offset_bytes[1] << 7]);
+            header.ttl = bytes[8];
+            header.protocol = FromPrimitive::from_u8(bytes[9]).unwrap();
+            header.checksum = u16::from_be_bytes([bytes[10], bytes[11]]);
+            header.src_ip = super::address::V4::from_bytes([bytes[12], bytes[13], bytes[14], bytes[15]]);
+            header.dst_ip = super::address::V4::from_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+            return Header::V4(header);
+        } else {
+            return Header::V6(V6{});
+        };
     }
 }

@@ -2,8 +2,8 @@ pub mod ip;
 
 fn main() {
     let ip_network = ip::Network::new(
-        ip::Address::from_string("192.168.110.0"),
-        ip::Bitmask::new(28)
+        ip::address::Address::V6(ip::address::AddressV6::from_string("FF45:AC32:1223:1243:AC12:DE21:41EF:54FD").expect("Will be parsed")),
+        ip::bitmask::Bitmask::V6(ip::bitmask::BitmaskV6::new(125).expect("Number matched"))
     );
     println!("       Network name: {}", ip_network.name.to_string());
     println!("Binary network name: {}", ip_network.name.to_bitstring());
@@ -13,9 +13,8 @@ fn main() {
     for address in ip_network.get_available_addresses() {
         println!("   {}", address.to_string());
     }
-
-    let header = ip::header::Header{
-        version: ip::header::Version::IpV4,
+/*
+    let header = ip::header::V4{
         header_length: 5,
         dscp: 0x0,
         ecn: 0x2,
@@ -25,10 +24,10 @@ fn main() {
         has_fragments: false,
         fragment_offset: 0,
         ttl: 62,
-        protocol: ip::header::TransportProtocolsNumbers::Sctp,
+        protocol: ip::types::TransportProtocolsNumbers::Sctp,
         checksum: 0xf109,
-        src_ip: ip::Address::from_string("23.41.23.41"),
-        dst_ip: ip::Address::from_string("117.123.43.12")
+        src_ip: ip::address::V4::from_string("23.41.23.41"),
+        dst_ip: ip::address::V4::from_string("117.123.43.12")
     };
     let bytes = header.encode();
     for byte in bytes {
@@ -36,22 +35,14 @@ fn main() {
     }
     println!();
 
-    let mut decoded = ip::header::Header{version: ip::header::Version::IpV4,
-        header_length: 0,
-        dscp: 0x0,
-        ecn: 0x0,
-        packet_length: 0,
-        id: 0x0000,
-        dont_fragment: true,
-        has_fragments: false,
-        fragment_offset: 0,
-        ttl: 0,
-        protocol: ip::header::TransportProtocolsNumbers::Tcp,
-        checksum: 0x0000,
-        src_ip: ip::Address::from_string("123.12.32.21"),
-        dst_ip: ip::Address::from_string("12.32.43.12")};
-    decoded.decode(bytes);
+    let decoded = ip::header::V4::decode(bytes);
 
     println!("{:?}", header);
     println!("{:?}", decoded);
+
+    let address = ip::address::V6::from_string("2000:ABCD:1243:64CD:EFD1:AA11:5642:1111");
+    println!("          IpV6: {}", address.to_string());
+    println!("IpV6 as binary: {}", address.to_bitstring());
+*/
+
 }
