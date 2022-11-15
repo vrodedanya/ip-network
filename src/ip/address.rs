@@ -1,31 +1,16 @@
-use std::{num::ParseIntError};
+use std::num::ParseIntError;
 
 #[derive(Clone, Copy)]
-pub enum Address {
+pub enum SomeAddress {
     V4(AddressV4),
     V6(AddressV6),
 }
 
-impl Address {
-    pub fn to_string(&self) -> String {
-        match self {
-            Address::V4(address) => address.to_string(),
-            Address::V6(address) => address.to_string(),
-        }
-    }
-    pub fn next(&self) -> Address {
-        match self {
-            Address::V4(address) => Address::V4(address.next()),
-            Address::V6(address) => Address::V6(address.next()),
-        }
-    }
-    
-    pub fn to_bitstring(&self) -> String {
-        match self {
-            Address::V4(address) => address.to_bitstring(),
-            Address::V6(address) => address.to_bitstring(),
-        }
-    }
+pub trait Address {
+    fn to_string(&self) -> String;
+    fn next(&self) -> Box<dyn Address>;
+    fn to_bitstring(&self) -> String;
+    fn apply_bitmask(&self, bitmask: &super::bitmask::Bitmask) -> Box<dyn Address>;
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -62,17 +47,26 @@ impl AddressV4 {
     pub fn as_u32(&self) -> u32 {
         return self.bits;
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl Address for AddressV4 {
+    fn to_string(&self) -> String {
         self.as_bytes().map(|x|x.to_string()).join(".")
     }
 
-    pub fn to_bitstring(&self) -> String {
+    fn to_bitstring(&self) -> String {
         self.as_bytes().map(|x|format!("{:0>8b}", x)).join(".")
     }
 
-    pub fn next(&self) -> AddressV4 {
-        AddressV4::from_u32(self.bits + 1)
+    fn next(&self) -> Box<dyn Address> {
+        Box::new(AddressV4::from_u32(self.bits + 1))
+    }
+    fn apply_bitmask(&self, bitmask: &super::bitmask::Bitmask) -> Box<dyn Address>
+    {
+        match bitmask {
+            super::bitmask::Bitmask::V4(mask) => Box::new(AddressV4::from_u32(self.as_u32() & mask.get())),
+            super::bitmask::Bitmask::V6(_) => panic!("Can't apply V6 bitmask to V4 address"),
+        }
     }
 }
 
@@ -101,8 +95,10 @@ impl AddressV6 {
     pub fn as_u128(&self) -> u128 {
         return self.bits;
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl Address for AddressV6 {
+    fn to_string(&self) -> String {
         let bytes = self.as_bytes();
         format!("{:0<2x}", bytes[0]) + &format!("{:0<2x}", bytes[1]) + ":" +
         &format!("{:0<2x}", bytes[2]) + &format!("{:0<2x}", bytes[3]) + ":" +
@@ -114,7 +110,7 @@ impl AddressV6 {
         &format!("{:0<2x}", bytes[14]) + &format!("{:0<2x}", bytes[15])
     }
 
-    pub fn to_bitstring(&self) -> String {
+    fn to_bitstring(&self) -> String {
         let bytes = self.as_bytes();
         format!("{:0>8b}", bytes[0]) + &format!("{:0>8b}", bytes[1]) + ":" +
         &format!("{:0>8b}", bytes[2]) + &format!("{:0>8b}", bytes[3]) + ":" +
@@ -126,7 +122,15 @@ impl AddressV6 {
         &format!("{:0>8b}", bytes[14]) + &format!("{:0>8b}", bytes[15])
     }
 
-    pub fn next(&self) -> AddressV6 {
-        AddressV6::from_u128(self.bits + 1)
+    fn next(&self) -> Box<dyn Address> {
+        Box::new(AddressV6::from_u128(self.bits + 1))
+    }
+
+    fn apply_bitmask(&self, bitmask: &super::bitmask::Bitmask) -> Box<dyn Address>
+    {
+        match bitmask {
+            super::bitmask::Bitmask::V4(_) => panic!("Can't apply V4 bitmask to V6 address"),
+            super::bitmask::Bitmask::V6(mask) => Box::new(AddressV6::from_u128(self.as_u128() & mask.get())),
+        }
     }
 }

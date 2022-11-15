@@ -1,6 +1,6 @@
 use num_derive::FromPrimitive;    
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Version {
     IpV4 = 4,
     IpV6 = 6,
