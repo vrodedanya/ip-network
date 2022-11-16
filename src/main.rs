@@ -15,20 +15,30 @@ fn main() {
         println!("   {}", address.to_string());
     }
 
-    let header = ip::header::HeaderV4{
-        header_length: 5,
+    // let header = ip::header::HeaderV4{
+    //     header_length: 5,
+    //     dscp: 0x0,
+    //     ecn: 0x2,
+    //     packet_length: 56,
+    //     id: 0x000f,
+    //     dont_fragment: true,
+    //     has_fragments: false,
+    //     fragment_offset: 10,
+    //     ttl: 62,
+    //     protocol: ip::types::TransportProtocolsNumbers::Sctp,
+    //     checksum: 0xf109,
+    //     src_ip: AddressV4::from_string("23.41.23.41").unwrap(),
+    //     dst_ip: AddressV4::from_string("117.123.43.12").unwrap()
+    // };
+    let header = ip::header::HeaderV6{
         dscp: 0x0,
         ecn: 0x2,
-        packet_length: 56,
-        id: 0x000f,
-        dont_fragment: true,
-        has_fragments: false,
-        fragment_offset: 10,
-        ttl: 62,
-        protocol: ip::types::TransportProtocolsNumbers::Sctp,
-        checksum: 0xf109,
-        src_ip: AddressV4::from_string("23.41.23.41").unwrap(),
-        dst_ip: AddressV4::from_string("117.123.43.12").unwrap()
+        flow_label: 0x12345,
+        payload_length: 1234,
+        next_header: ip::types::TransportProtocolsNumbers::Sctp,
+        hop_limit: 16,
+        source_address: AddressV6::from_string("feed:1234:abcd:5345:6576:1234:abcd:abcd").unwrap(),
+        destination_address: AddressV6::from_string("12ed:6666:4543:2344:beef:1234:1234:abcd").unwrap()
     };
     let bytes = header.encode();
     for byte in &bytes {

@@ -125,3 +125,11 @@ impl BitmaskV6 {
         return bitmask.reverse_bits();
     }
 }
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn testing() {
+        
+    }
+}

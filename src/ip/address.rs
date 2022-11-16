@@ -33,7 +33,8 @@ impl AddressV4 {
             [splitted[0].parse()?, 
             splitted[1].parse()?, 
             splitted[2].parse()?, 
-            splitted[3].parse()?]))
+            splitted[3].parse()?]
+        ))
     }
     pub fn from_u32(ip_address: u32) -> AddressV4 {
         AddressV4 { bits: ip_address }
@@ -46,6 +47,10 @@ impl AddressV4 {
 
     pub fn as_u32(&self) -> u32 {
         return self.bits;
+    }
+
+    pub fn set_u32(& mut self, new_value: u32) {
+        self.bits = new_value;
     }
 }
 
@@ -94,6 +99,10 @@ impl AddressV6 {
 
     pub fn as_u128(&self) -> u128 {
         return self.bits;
+    }
+
+    pub fn set_u128(& mut self, new_value: u128) {
+        self.bits = new_value;
     }
 }
 

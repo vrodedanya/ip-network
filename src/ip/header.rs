@@ -52,7 +52,14 @@ pub struct HeaderV4 {
 
 #[derive(Debug)]
 pub struct HeaderV6 {
-
+    pub dscp: u8, // Differentiated Services Code Point
+    pub ecn: u8, // Explicit Congestion Notification
+    pub flow_label: u32,
+    pub payload_length: u16,
+    pub next_header: super::TransportProtocolsNumbers,
+    pub hop_limit: u8,
+    pub source_address: super::address::AddressV6,
+    pub destination_address: super::address::AddressV6,
 }
 
 
@@ -70,8 +77,8 @@ impl HeaderV4 {
             ttl: 0,
             protocol: super::TransportProtocolsNumbers::Tcp,
             checksum: 0x0000,
-            src_ip: super::address::AddressV4::from_string("0.0.0.0").unwrap(),
-            dst_ip: super::address::AddressV4::from_string("0.0.0.0").unwrap()
+            src_ip: super::address::AddressV4::from_u32(0),
+            dst_ip: super::address::AddressV4::from_u32(0)
         }
     }
     pub fn encode(&self) -> Vec<u8> {
@@ -133,13 +140,53 @@ impl HeaderV4 {
 
 impl HeaderV6 {
     pub fn empty() -> HeaderV6 {
-        return HeaderV6 {  }
+        return HeaderV6 {
+            dscp: 0,
+            ecn: 0,
+            flow_label: 0,
+            payload_length: 0,
+            next_header: super::TransportProtocolsNumbers::Tcp,
+            hop_limit: 0,
+            source_address: super::address::AddressV6::from_u128(0),
+            destination_address: super::address::AddressV6::from_u128(0)
+        }
     }
+
+    pub fn encode(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+        bytes.push(0x60 | self.dscp >> 2);
+        let flow_label_bytes = self.flow_label.to_be_bytes();
+        bytes.push((self.dscp << 6 | self.ecn << 4) & 0xf0 | flow_label_bytes[1] & 0x0f);
+        bytes.push(flow_label_bytes[2]);
+        bytes.push(flow_label_bytes[3]);
+        let payload_length = self.payload_length.to_be_bytes();
+        bytes.push(payload_length[0]);
+        bytes.push(payload_length[1]);
+        bytes.push(self.next_header as u8);
+        bytes.push(self.hop_limit);
+        let src_bytes = self.source_address.as_bytes();
+        bytes.append(&mut src_bytes.to_vec());
+        let dst_bytes = self.destination_address.as_bytes();
+        bytes.append(&mut dst_bytes.to_vec());
+        return bytes;
+    }
+
     pub fn decode(bytes: &Vec<u8>) -> Result<HeaderV6, HeaderError> {
-        if bytes.len() != 20 {
+        if bytes.len() != 40 {
             return Err(HeaderError::InvalidPacket);
         }
         let mut header = HeaderV6::empty();
+        header.dscp = (bytes[0] & 0x0f) << 2 | bytes[1] >> 6;
+        header.ecn = bytes[1] >> 4 & 0x03;
+        header.flow_label = u32::from_be_bytes([0, bytes[1] & 0x0f, bytes[2], bytes[3]]);
+        header.payload_length = u16::from_be_bytes([bytes[4], bytes[5]]);
+        header.next_header = FromPrimitive::from_u8(bytes[6]).unwrap() ;
+        header.hop_limit = bytes[7];
+        let mut arr = [0u8; 16];
+        arr.copy_from_slice(&bytes[8..24]);
+        header.source_address.set_u128(u128::from_be_bytes(arr));
+        arr.copy_from_slice(&bytes[24..]);
+        header.destination_address.set_u128(u128::from_be_bytes(arr));
         return Ok(header)
     }
 }
