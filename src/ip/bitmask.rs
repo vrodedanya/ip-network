@@ -102,7 +102,7 @@ impl BitmaskV6 {
 
     pub fn addresses_number(&self) -> u128 {
         let available_bits = 128 - self.bits_number;
-        (2_u128.pow(available_bits.into()) - 2).into()
+        (2_u128.pow(available_bits.into())).into()
     }
 
     pub fn to_bitstring(&self) -> String {
@@ -128,8 +128,38 @@ impl BitmaskV6 {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     #[test]
-    fn testing() {
-        
+    fn bitmask_v4_correct() {
+        let bitmask = BitmaskV4::new(24);
+        assert!(bitmask.is_ok());
+        let bitmask = bitmask.unwrap();
+        assert_eq!(bitmask.bits_number, 24);
+        assert_eq!(bitmask.mask, 0xffffff00);
+        assert_eq!(bitmask.addresses_number(), 254);
+        assert_eq!(bitmask.to_bitstring(), "11111111.11111111.11111111.00000000");
+    }
+
+    #[test]
+    fn bitmask_v4_incorrect() {
+        let bitmask = BitmaskV4::new(32);
+        assert!(bitmask.is_err());
+    }
+
+    #[test]
+    fn bitmask_v6_correct() {
+        let bitmask = BitmaskV6::new(126);
+        assert!(bitmask.is_ok());
+        let bitmask = bitmask.unwrap();
+        assert_eq!(bitmask.bits_number, 126);
+        assert_eq!(bitmask.mask, 0xfffffffffffffffffffffffffffffffc);
+        assert_eq!(bitmask.addresses_number(), 4);
+        assert_eq!(bitmask.to_bitstring(), "1111111111111111:1111111111111111:1111111111111111:1111111111111111:1111111111111111:1111111111111111:1111111111111111:1111111111111100")
+    }
+
+    #[test]
+    fn bitmask_v6_incorrect() {
+        let bitmask = BitmaskV6::new(129);
+        assert!(bitmask.is_err());
     }
 }
