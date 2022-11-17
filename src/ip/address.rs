@@ -143,3 +143,72 @@ impl Address for AddressV6 {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn address_v4_correct_from_u32() {
+        let address = AddressV4::from_u32(0xbcdaf000);
+        assert_eq!(address.bits, 0xbcdaf000);
+        assert_eq!(address.to_string(), "188.218.240.0");
+        assert_eq!(address.to_bitstring(), "10111100.11011010.11110000.00000000");
+    }
+
+    #[test]
+    fn address_v4_correct_from_string() {
+        let address = AddressV4::from_string("188.218.240.0");
+        assert!(address.is_ok());
+        let address = address.unwrap();
+        assert_eq!(address.bits, 0xbcdaf000);
+        assert_eq!(address.to_string(), "188.218.240.0");
+        assert_eq!(address.to_bitstring(), "10111100.11011010.11110000.00000000");
+    }
+
+    #[test]
+    fn address_v4_correct_from_bytes() {
+        let address = AddressV4::from_bytes([0xbc, 0xda, 0xf0, 0x00]);
+        assert_eq!(address.bits, 0xbcdaf000);
+        assert_eq!(address.to_string(), "188.218.240.0");
+        assert_eq!(address.to_bitstring(), "10111100.11011010.11110000.00000000");
+    }
+
+    #[test]
+    fn address_v4_incorrect_from_string() {
+        let address = AddressV4::from_string("123|123.423.432.23");
+        assert!(address.is_err());
+    }
+
+    #[test]
+    fn address_v6_correct_from_u128() {
+        let address = AddressV6::from_u128(0xFABC1234BEEF45640000EEFD11124123);
+        assert_eq!(address.bits, 0xFABC1234BEEF45640000EEFD11124123);
+        assert_eq!(address.to_string(), "fabc:1234:beef:4564:0000:eefd:1112:4123");
+        assert_eq!(address.to_bitstring(), "1111101010111100:0001001000110100:1011111011101111:0100010101100100:0000000000000000:1110111011111101:0001000100010010:0100000100100011");
+    }
+
+    #[test]
+    fn address_v6_correct_from_string() {
+        let address = AddressV6::from_string("fabc:1234:beef:4564:0000:eefd:1112:4123");
+        assert!(address.is_ok());
+        let address = address.unwrap();
+        assert_eq!(address.bits, 0xFABC1234BEEF45640000EEFD11124123);
+        assert_eq!(address.to_string(), "fabc:1234:beef:4564:0000:eefd:1112:4123");
+        assert_eq!(address.to_bitstring(), "1111101010111100:0001001000110100:1011111011101111:0100010101100100:0000000000000000:1110111011111101:0001000100010010:0100000100100011");
+    }
+
+    #[test]
+    fn address_v6_correct_from_bytes() {
+        let address = AddressV6::from_bytes([0xFA, 0xBC, 0x12, 0x34, 0xBE, 0xEF, 0x45, 0x64, 0x00, 0x00, 0xEE, 0xFD, 0x11, 0x12, 0x41, 0x23]);
+        assert_eq!(address.bits, 0xFABC1234BEEF45640000EEFD11124123);
+        assert_eq!(address.to_string(), "fabc:1234:beef:4564:0000:eefd:1112:4123");
+        assert_eq!(address.to_bitstring(), "1111101010111100:0001001000110100:1011111011101111:0100010101100100:0000000000000000:1110111011111101:0001000100010010:0100000100100011");
+    }
+
+    #[test]
+    fn address_v6_incorrect_from_string() {
+        let address = AddressV6::from_string("123|123.423.432.23");
+        assert!(address.is_err());
+    }
+    
+}
