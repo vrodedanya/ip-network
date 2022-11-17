@@ -1,0 +1,12 @@
+name: Autotests
+on:
+  push:
+    branches:
+      - master
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/chekout@v2
+      - run: cargo test
