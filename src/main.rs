@@ -14,22 +14,6 @@ fn main() {
     for address in ip_network.get_available_addresses() {
         println!("   {}", address.to_string());
     }
-
-    // let header = ip::header::HeaderV4{
-    //     header_length: 5,
-    //     dscp: 0x0,
-    //     ecn: 0x2,
-    //     packet_length: 56,
-    //     id: 0x000f,
-    //     dont_fragment: true,
-    //     has_fragments: false,
-    //     fragment_offset: 10,
-    //     ttl: 62,
-    //     protocol: ip::types::TransportProtocolsNumbers::Sctp,
-    //     checksum: 0xf109,
-    //     src_ip: AddressV4::from_string("23.41.23.41").unwrap(),
-    //     dst_ip: AddressV4::from_string("117.123.43.12").unwrap()
-    // };
     let header = ip::header::HeaderV6{
         dscp: 0x0,
         ecn: 0x2,

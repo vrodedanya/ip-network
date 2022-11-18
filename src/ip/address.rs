@@ -49,20 +49,22 @@ impl AddressV4 {
         return self.bits;
     }
 
-    pub fn set_u32(& mut self, new_value: u32) {
+    pub fn set_u32(&mut self, new_value: u32) {
         self.bits = new_value;
     }
 }
 
 impl Address for AddressV4 {
     fn to_string(&self) -> String {
-        self.as_bytes().map(|x|x.to_string()).join(".")
+        self.as_bytes().map(|x| x.to_string()).join(".")
     }
 
     fn to_bitstring(&self) -> String {
-        self.as_bytes().map(|x|format!("{:0>8b}", x)).join(".")
+        self.as_bytes().map(|x| format!("{:0>8b}", x)).join(".")
     }
 
+    // ! May overflow
+    // ! Better approach to return result
     fn next(&self) -> Box<dyn Address> {
         Box::new(AddressV4::from_u32(self.bits + 1))
     }
@@ -79,6 +81,8 @@ impl AddressV6 {
     pub fn from_bytes(bytes: [u8; 16]) -> AddressV6 {
         AddressV6{bits: u128::from_be_bytes(bytes)}
     }
+    
+    // TODO: Add support of :: and 
     pub fn from_string(ip_address: &str) -> Result<AddressV6, ParseIntError> { // Only full format
         let splitted: Vec<&str> = ip_address.split(':').collect();
         let mut bytes = [0_u8; 16];
@@ -107,6 +111,7 @@ impl AddressV6 {
 }
 
 impl Address for AddressV6 {
+    // TODO: Refactor
     fn to_string(&self) -> String {
         let bytes = self.as_bytes();
         format!("{:0<2x}", bytes[0]) + &format!("{:0<2x}", bytes[1]) + ":" +
@@ -119,6 +124,7 @@ impl Address for AddressV6 {
         &format!("{:0<2x}", bytes[14]) + &format!("{:0<2x}", bytes[15])
     }
 
+    // TODO: Refactor
     fn to_bitstring(&self) -> String {
         let bytes = self.as_bytes();
         format!("{:0>8b}", bytes[0]) + &format!("{:0>8b}", bytes[1]) + ":" +
@@ -131,12 +137,12 @@ impl Address for AddressV6 {
         &format!("{:0>8b}", bytes[14]) + &format!("{:0>8b}", bytes[15])
     }
 
+    // ! May overflow. Return Result<>
     fn next(&self) -> Box<dyn Address> {
         Box::new(AddressV6::from_u128(self.bits + 1))
     }
 
-    fn apply_bitmask(&self, bitmask: &super::bitmask::Bitmask) -> Box<dyn Address>
-    {
+    fn apply_bitmask(&self, bitmask: &super::bitmask::Bitmask) -> Box<dyn Address> {
         match bitmask {
             super::bitmask::Bitmask::V4(_) => panic!("Can't apply V4 bitmask to V6 address"),
             super::bitmask::Bitmask::V6(mask) => Box::new(AddressV6::from_u128(self.as_u128() & mask.get())),
@@ -144,6 +150,8 @@ impl Address for AddressV6 {
     }
 }
 
+
+// TODO: Add tests for next method
 #[cfg(test)]
 mod tests {
     use super::*;
